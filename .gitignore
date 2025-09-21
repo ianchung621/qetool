@@ -1,0 +1,11 @@
+f1/
+f1_download/
+Lecture-notes/
+scripts/
+
+dev.py
+dev.ipynb
+
+**/__pycache__/
+**/.DS_Store
+**.egg-info
