@@ -1,6 +1,6 @@
 import argparse
 from .convert import in2xsf
-from .plot import plot_dos
+from .plot import plot_dos, plot_band
 
 def main():
     parser = argparse.ArgumentParser(
@@ -41,6 +41,32 @@ def main():
         display=args.display,
         xlim=args.xlim
     ))
+
+    # --- plot_band ---
+    p_band = subparsers.add_parser("plot_band", help="Plot electronic band structure")
+    p_band.add_argument("--band-in", help="Path to band.in (K-path definition)")
+    p_band.add_argument("--bands-in", help="Comma-separated bands input files (e.g. bands_up.in). ")
+    p_band.add_argument("--nscf-out", help="Path to nscf.out (for Fermi energy)")
+    p_band.add_argument("--save-png", help="Save figure to file (default: <prefix>_band.png)")
+    p_band.add_argument("--display", action="store_true", help="Show plot interactively instead of saving")
+    p_band.add_argument("--ylim",
+        nargs=2,
+        type=float,
+        default=(-8.0, 7.0),
+        metavar=("YMIN", "YMAX"),
+        help="Energy window relative to E_F (default: -8 7)"
+    )
+    p_band.set_defaults(func=lambda args: plot_band(
+        band_in=args.band_in,
+        bands_in=args.bands_in.split(",") if args.bands_in else None,
+        nscf_out=args.nscf_out,
+        save_png=args.save_png,
+        display=args.display,
+        ylim=args.ylim,
+    ))
+
+    # --- plot-bands ---
+
 
     # --- parse + dispatch ---
     args = parser.parse_args()

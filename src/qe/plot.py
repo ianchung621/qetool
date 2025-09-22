@@ -1,10 +1,13 @@
 from pathlib import Path
 import glob
 
+import numpy as np
 import matplotlib.pyplot as plt
 
-from .util.pdos import load_and_group_pdos, format_label, read_nspin, read_fermi, load_dos
+from .util.read_qe import read_nspin, read_prefix
 from .util.find_file import resolve_file
+from .util.pdos import load_and_group_pdos, format_label, read_fermi, load_dos
+from .util.bands import discover_band_inputs, read_kpoints, parse_bands_in, load_band_data, format_kpoints
 
 def plot_dos(pdos_tot: str | None = None,
     nscf_in: str | None = None, 
@@ -60,7 +63,7 @@ def plot_dos(pdos_tot: str | None = None,
         ax.plot(energies, data[:, 1], color='k', label="total")
     elif nspin == 2:
         ax.plot(energies, data[:, 1], label="spin-up")
-        ax.plot(energies, data[:, 2], label="spin-down")
+        ax.plot(energies, data[:, 2], label="spin-dw")
     elif nspin == 4:
         raise NotImplementedError
     else:
@@ -95,7 +98,7 @@ def plot_dos(pdos_tot: str | None = None,
 
     ax.tick_params(axis="both", which="major", labelsize=12)
     if xlim:
-        ax.set_xlim((efermi + xlim[0], efermi + xlim[1]))
+        ax.set_xlim((xlim[0] + efermi, xlim[1] + efermi))
 
     if display:
         plt.show()
@@ -104,4 +107,99 @@ def plot_dos(pdos_tot: str | None = None,
         fig.savefig(save_png, bbox_inches="tight")
         print(f"Figure saved to {save_png}")
 
-    return fig
+def plot_band(
+    band_in: str | None = None,
+    bands_in: list[str] | None = None,
+    nscf_out: str | None = None,
+    save_png: str | None = None,
+    display: bool = False,
+    ylim: tuple[float, float] | None = (-8.0, 7.0),
+):
+    """
+    Plot Quantum ESPRESSO band structure.
+
+    Parameters
+    ----------
+    band_in : str, optional
+        Path to band.in (K-point path definition).
+    bands_in : list[str], optional
+        One or two bands*.in files (spin = 1 or 2).
+        If None, will auto-discover.
+    nscf_out : str, optional
+        Path to nscf.out (used to extract Fermi level).
+    save_png : str, optional
+        Output PNG filename. Default: <prefix>_band.png
+    display : bool, default=False
+        If True, show interactively. Else save to file (HPC safe).
+    xlim : tuple[float, float], optional
+        Energy axis limits relative to Fermi (default: -8, 7 eV).
+    """
+    COLOR_UP, COLOR_DN = "blue", "red" 
+    # --- auto-glob if not provided ---
+    if band_in is None:
+        band_in = resolve_file("band.in", "band.in")
+
+    if nscf_out is None:
+        nscf_out = resolve_file("nscf.out", "nscf.out", search_sibling_file="nscf.out")
+    
+    nspin = read_nspin(band_in)
+
+    if bands_in is None:
+        bands_in = discover_band_inputs(nspin)
+
+    # --- read metadata ---
+    prefix = read_prefix(band_in)
+    kpoints = read_kpoints(band_in)
+    efermi = read_fermi(nscf_out)
+
+    # --- read bands ---
+    band_sources = []
+    for b_in in bands_in:
+        filband, spin_comp = parse_bands_in(b_in)
+        if not filband:
+            raise RuntimeError(f"No filband=... found in {b_in}")
+        gnu_data = load_band_data(filband + ".gnu")
+        band_sources.append((gnu_data, spin_comp))
+    # --- plotting ---
+    fig, ax = plt.subplots()
+
+    for data, spin_comp in band_sources:
+        k_vals, energies = data[:, 0], data[:, 1:]
+
+        if nspin == 1:
+            ax.plot(k_vals, energies, color="b", lw=1.0)
+        elif nspin == 2 and spin_comp == 1:
+            ax.plot(k_vals, energies, color=COLOR_UP, lw=1.0)
+        elif nspin == 2 and spin_comp == 2:
+            ax.plot(k_vals, energies, color=COLOR_DN, lw=1.0)
+        else:
+            ax.plot(k_vals, energies, lw=1.0)
+    
+    # --- format axes ---
+    xticks, xlabels = format_kpoints(kpoints, k_vals)
+    ax.set_xticks(xticks)
+    ax.set_xticklabels(xlabels)
+    ax.tick_params(axis="both", which="major", labelsize=12)
+    for k_pts in xticks:
+        ax.axvline(k_pts, color="k", linestyle="--", lw=0.8)
+    ax.set_xlim(xticks[0], xticks[-1])
+
+    ax.axhline(efermi, color="k", linestyle=":", lw=0.8)
+    ax.set_ylabel("Energy (eV)", fontsize=14)
+    ax.set_title(prefix, fontsize=16)
+
+    if ylim:
+        ax.set_ylim((ylim[0] + efermi, ylim[1] + efermi))
+
+    if nspin == 2:
+        ax.plot([], [], color=COLOR_UP, label="spin-up")
+        ax.plot([], [], color=COLOR_DN, label="spin-dn")
+        ax.legend(fontsize=12)
+
+    # --- save or display ---
+    if display:
+        plt.show()
+    else:
+        save_png = save_png or f"{prefix}_band.png"
+        fig.savefig(save_png, bbox_inches="tight")
+        print(f"Figure saved to {save_png}")

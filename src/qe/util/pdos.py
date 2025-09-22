@@ -3,13 +3,6 @@ import numpy as np
 from pathlib import Path
 from collections import defaultdict
 
-def read_nspin(nscf_in: str) -> int:
-    with open(nscf_in) as f:
-        text = f.read().lower()
-    match = re.search(r"nspin\s*=\s*(\d+)", text)
-    return int(match.group(1)) if match else 1
-
-
 def read_fermi(nscf_out: str) -> float:
     with open(nscf_out) as f:
         for line in f:
