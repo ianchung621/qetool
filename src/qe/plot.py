@@ -90,7 +90,8 @@ def plot_dos(pdos_tot: str | None = None,
                     ax.plot(energies_p, arr[:,1], label=f"{label} ↓")
 
     # --- Formatting ---
-    ax.axvline(efermi, color="k", linestyle="--", lw=0.8)
+    if efermi:
+        ax.axvline(efermi, color="k", linestyle="--", lw=0.8)
     ax.set_xlabel("Energy (eV)", fontsize=14)
     ax.set_ylabel("DOS (states/eV/spin/cell)", fontsize=14)
     ax.set_title(prefix, fontsize=16)
@@ -99,6 +100,7 @@ def plot_dos(pdos_tot: str | None = None,
     ax.tick_params(axis="both", which="major", labelsize=12)
     if xlim:
         ax.set_xlim((xlim[0] + efermi, xlim[1] + efermi))
+    ax.set_ylim(bottom=0)
 
     if display:
         plt.show()
@@ -184,7 +186,8 @@ def plot_band(
         ax.axvline(k_pts, color="k", linestyle="--", lw=0.8)
     ax.set_xlim(xticks[0], xticks[-1])
 
-    ax.axhline(efermi, color="k", linestyle=":", lw=0.8)
+    if efermi:
+        ax.axhline(efermi, color="k", linestyle=":", lw=0.8)
     ax.set_ylabel("Energy (eV)", fontsize=14)
     ax.set_title(prefix, fontsize=16)
 

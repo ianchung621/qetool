@@ -1,14 +1,17 @@
 import re
-import numpy as np
+import warnings
 from pathlib import Path
 from collections import defaultdict
 
-def read_fermi(nscf_out: str) -> float:
+import numpy as np
+
+def read_fermi(nscf_out: str) -> float | None:
     with open(nscf_out) as f:
         for line in f:
             if "the fermi energy is" in line.lower():
                 return float(line.split()[-2])  # "is XXX ev"
-    raise ValueError("Fermi energy not found in output.")
+    warnings.warn(f"Fermi energy not found in {nscf_out}")
+    return None
 
 
 def load_dos(pdos_tot: str) -> np.ndarray:

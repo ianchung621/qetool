@@ -1,5 +1,6 @@
 import glob
 import os
+import warnings
 
 def find_local(pattern: str, cwd: str = ".") -> list[str]:
     """Return all matches for pattern in `cwd`."""
@@ -61,10 +62,18 @@ def resolve_file(
     # Step 1: local search
     matches = find_local(pattern, cwd)
     if matches:
-        if len(matches) > 1 and not allow_multi:
-            raise RuntimeError(
-                f"Multiple {name} found in {cwd}: {matches}. "
-                f"Specify explicitly with --{name.replace('.', '-')}"
+        if len(matches) > 1:
+            if not allow_multi:
+                raise RuntimeError(
+                    f"Multiple {name} found in {cwd}: {matches}. "
+                    f"Specify explicitly with --{name.replace('.', '-')}"
+                )
+            warnings.warn(
+                f"Multiple {name} found in {cwd}. "
+                f"Using first match: {matches[0]}"
+                f"Specify explicitly with --{name.replace('.', '-')}",
+                RuntimeWarning,
+                stacklevel=2,
             )
         return matches[0]
 
@@ -72,10 +81,18 @@ def resolve_file(
     if search_sibling_file:
         sib_matches = search_siblings(pattern, cwd)
         if sib_matches:
-            if len(sib_matches) > 1 and not allow_multi:
-                raise RuntimeError(
-                    f"Multiple {name} found in sibling dirs: {sib_matches}. "
-                    f"Specify explicitly with --{name.replace('.', '-')}"
+            if len(sib_matches) > 1:
+                if not allow_multi:
+                    raise RuntimeError(
+                        f"Multiple {name} found in sibling dirs: {sib_matches}. "
+                        f"Specify explicitly with --{name.replace('.', '-')}"
+                    )
+                warnings.warn(
+                    f"Multiple {name} found in sibling dirs. "
+                    f"Using first match: {sib_matches[0]}"
+                    f"Specify explicitly with --{name.replace('.', '-')}",
+                    RuntimeWarning,
+                    stacklevel=2,
                 )
             return sib_matches[0]
 
