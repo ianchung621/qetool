@@ -8,6 +8,7 @@ from .util.read_qe import read_nspin, read_prefix
 from .util.find_file import resolve_file
 from .util.pdos import load_and_group_pdos, format_label, read_fermi, load_dos
 from .util.bands import discover_band_inputs, read_kpoints, parse_bands_in, load_band_data, format_kpoints
+from .util.plt_util import get_visible_ylim
 
 def plot_dos(pdos_tot: str | None = None,
     nscf_in: str | None = None, 
@@ -60,10 +61,10 @@ def plot_dos(pdos_tot: str | None = None,
 
     # --- Total DOS ---
     if nspin == 1:
-        ax.plot(energies, data[:, 1], color='k', label="total")
+        ax.plot(energies, data[:, 1], color='k', label="total", lw = 2)
     elif nspin == 2:
-        ax.plot(energies, data[:, 1], label="spin-up")
-        ax.plot(energies, data[:, 2], label="spin-dw")
+        ax.plot(energies, data[:, 1], color='b', label="spin-up", lw = 2)
+        ax.plot(energies, - data[:, 2], color='r', label="spin-dw", lw = 2)
     elif nspin == 4:
         raise NotImplementedError
     else:
@@ -87,7 +88,7 @@ def plot_dos(pdos_tot: str | None = None,
                     ax.plot(energies_p, arr, label=label)
                 elif nspin == 2:
                     ax.plot(energies_p, arr[:,0], label=f"{label} ↑")
-                    ax.plot(energies_p, arr[:,1], label=f"{label} ↓")
+                    ax.plot(energies_p, - arr[:,1], label=f"{label} ↓")
 
     # --- Formatting ---
     if efermi:
@@ -95,12 +96,17 @@ def plot_dos(pdos_tot: str | None = None,
     ax.set_xlabel("Energy (eV)", fontsize=14)
     ax.set_ylabel("DOS (states/eV/spin/cell)", fontsize=14)
     ax.set_title(prefix, fontsize=16)
-    ax.legend(fontsize=12)
+    ax.legend(fontsize=12, loc = 'upper right')
 
     ax.tick_params(axis="both", which="major", labelsize=12)
     if xlim:
         ax.set_xlim((xlim[0] + efermi, xlim[1] + efermi))
-    ax.set_ylim(bottom=0)
+    bottom, top = get_visible_ylim(ax)
+    if nspin == 1:
+        ax.set_ylim(bottom=0, top=top)
+    elif nspin == 2:
+        ax.axhline(0, color = 'k', lw = 1)
+        ax.set_ylim(bottom=bottom, top=top)
 
     if display:
         plt.show()
