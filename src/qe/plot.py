@@ -148,7 +148,12 @@ def plot_band(
         band_in = resolve_file("band.in", "band.in")
 
     if nscf_out is None:
-        nscf_out = resolve_file("nscf.out", "nscf.out", search_sibling_file="nscf.out")
+        try:
+            nscf_out = resolve_file("nscf.out", "nscf.out", search_sibling_file=True)
+            efermi = read_fermi(nscf_out)
+        except:
+            efermi = None
+            print("nscf.out not found. Skipping E_Fermi plotting and showing full band structure.")
     
     nspin = read_nspin(band_in)
 
@@ -158,7 +163,6 @@ def plot_band(
     # --- read metadata ---
     prefix = read_prefix(band_in)
     kpoints = read_kpoints(band_in)
-    efermi = read_fermi(nscf_out)
 
     # --- read bands ---
     band_sources = []
@@ -197,7 +201,7 @@ def plot_band(
     ax.set_ylabel("Energy (eV)", fontsize=14)
     ax.set_title(prefix, fontsize=16)
 
-    if ylim:
+    if ylim and efermi:
         ax.set_ylim((ylim[0] + efermi, ylim[1] + efermi))
 
     if nspin == 2:
