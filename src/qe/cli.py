@@ -1,6 +1,9 @@
 import argparse
+from pathlib import Path
+
 from .convert import in2xsf
 from .plot import plot_dos, plot_band
+from .bulk_modulus import prepare_scaled_inputs, analyze_bulk_modulus
 
 def main():
     parser = argparse.ArgumentParser(
@@ -65,7 +68,25 @@ def main():
         ylim=args.ylim,
     ))
 
-    # --- plot-bands ---
+    # --- bulk-modulus ---
+    p_bm = subparsers.add_parser("bulk_modulus", help="Prepare scaled inputs or calculate bulk modulus")
+    p_bm.add_argument("--in", dest="scf_in", default="scf.in", help="Input QE file (for prepare mode)")
+    p_bm.add_argument(
+        "-pp", "--prepare",
+        nargs="?",
+        const="0.96,0.97,0.98,0.99,1,1.01,1.02,1.03,1.04",
+        default=None,
+        help="Comma-separated scale factors, e.g. 0.97,0.98,0.99,1,1.01")
+    p_bm.add_argument("--display", action="store_true", help="Show plot interactively")
+
+    def run_bm(args):
+        if args.prepare:
+            scales = [float(x) for x in args.prepare.split(",")]
+            prepare_scaled_inputs(Path(args.scf_in), scales)
+        else:
+            analyze_bulk_modulus(display=args.display)
+
+    p_bm.set_defaults(func=run_bm)
 
 
     # --- parse + dispatch ---
