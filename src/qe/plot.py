@@ -19,6 +19,7 @@ def plot_dos(pdos_tot: str | None = None,
     save_png: str | None = None,
     display: bool = False,
     xlim: tuple[float, float] | None = (-8.0, 7.0),
+    show_gap: bool = True,
 ):
     """
     Plot Quantum ESPRESSO total DOS and optional grouped PDOS.
@@ -40,6 +41,8 @@ def plot_dos(pdos_tot: str | None = None,
         Output PNG filename. Default: <prefix>_dos.png
     display : bool, default=False
         If True, show interactively. Else save to file (HPC safe).
+    show_gap : bool, default=True
+        If True, compute and annotate band gap from total DOS.
     """
     # --- auto-glob if not provided ---
     if pdos_tot is None:
@@ -108,6 +111,31 @@ def plot_dos(pdos_tot: str | None = None,
     elif nspin == 2:
         ax.axhline(0, color = 'k', lw = 1)
         ax.set_ylim(bottom=bottom, top=top)
+    
+    # --- band gap ---
+    if show_gap:
+        gap_res = get_gap_from_dos(energies, data[:, 1], efermi)
+        if gap_res.gap > 0:
+            # mid-gap position at Fermi level (vertical)
+            x_mid = (gap_res.vbm + gap_res.cbm) / 2 + efermi
+            y_pos = 0.8 * top  # small positive DOS height for visibility
+
+            ax.text(
+                x_mid, y_pos,
+                f"$E_g$ = {gap_res.gap:.3f} eV",
+                ha="center", va="bottom",
+                fontsize=12,
+                bbox=dict(facecolor="white", alpha=0.7, edgecolor="none"),
+            )
+            ax.axvspan(
+                xmin = gap_res.vbm + efermi,
+                xmax=gap_res.cbm + efermi,
+                alpha=0.1, color='k',lw=0
+            )
+
+            print(f"[DOS] Band gap = {gap_res.gap:.3f} eV")
+        else:
+            print("[DOS] Metallic system: no band gap detected.")
 
     # --- save or display ---
     if display:
@@ -124,6 +152,7 @@ def plot_band(
     save_png: str | None = None,
     display: bool = False,
     ylim: tuple[float, float] | None = (-8.0, 7.0),
+    show_gap: bool = True,
 ):
     """
     Plot Quantum ESPRESSO band structure.
@@ -141,8 +170,10 @@ def plot_band(
         Output PNG filename. Default: <prefix>_band.png
     display : bool, default=False
         If True, show interactively. Else save to file (HPC safe).
-    xlim : tuple[float, float], optional
-        Energy axis limits relative to Fermi (default: -8, 7 eV).
+    ylim : tuple[float, float], optional
+        Energy window relative to Fermi (default: -8, 7 eV).
+    show_gap : bool, default=True
+        If True, compute and annotate band gap value on the plot.
     """
     COLOR_UP, COLOR_DN = "blue", "red" 
     # --- auto-glob if not provided ---
@@ -174,11 +205,21 @@ def plot_band(
             raise RuntimeError(f"No filband=... found in {b_in}")
         gnu_data = load_band_data(filband + ".gnu") # (n_points, n_bands+1), first col is k
         band_sources.append((gnu_data, spin_comp))
+
     # --- plotting ---
     fig, ax = plt.subplots()
+    
+    all_k_vals, all_energies = None, None
 
     for data, spin_comp in band_sources:
         k_vals, energies = data[:, 0], data[:, 1:]
+
+        if all_k_vals is None:
+            all_k_vals = k_vals
+            all_energies = energies
+        else:
+            # concatenate spin channels if any
+            all_energies = np.concatenate([all_energies, energies], axis=1)
 
         if nspin == 1:
             ax.plot(k_vals, energies, color="b", lw=1.0)
@@ -188,6 +229,25 @@ def plot_band(
             ax.plot(k_vals, energies, color=COLOR_DN, lw=1.0)
         else:
             ax.plot(k_vals, energies, lw=1.0)
+    
+    # --- band gap ---
+    if show_gap and efermi is not None and all_k_vals is not None:
+        gap_res = get_gap_from_bands(all_k_vals, all_energies, efermi)
+        print(gap_res)
+        if gap_res.gap > 0:
+            x_mid = (all_k_vals[gap_res.vbm_kidx] + all_k_vals[gap_res.cbm_kidx]) / 2
+            y_mid = (gap_res.vbm + gap_res.cbm) / 2 + efermi
+            ax.axhspan(
+                ymin = gap_res.vbm + efermi,
+                ymax=gap_res.cbm + efermi,
+                alpha=0.1, color='k',lw=0
+            )
+            ax.text(
+                x_mid, y_mid,
+                f"$E_g$ = {gap_res.gap:.3f} eV",
+                ha="center", va="center", fontsize=16,
+                bbox=dict(facecolor="white", alpha=0.6, edgecolor="none"),
+            )
     
     # --- format axes ---
     xticks, xlabels = format_kpoints(kpoints, k_vals)

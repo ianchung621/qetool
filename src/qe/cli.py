@@ -1,7 +1,7 @@
 import argparse
 from pathlib import Path
 
-from .convert import in2xsf
+from .convert import in2xsf, inout2xsf
 from .plot import plot_dos, plot_band
 from .bulk_modulus import prepare_scaled_inputs, analyze_bulk_modulus
 
@@ -18,6 +18,25 @@ def main():
     p_xsf.add_argument("-o", "--output", help="Optional output XSF filename")
     p_xsf.set_defaults(func=lambda args: in2xsf(args.scf_in, args.output))
 
+    # --- convert_xsf_with_moment ---
+    p_xsfm = subparsers.add_parser("inout2xsf",help="Convert QE input (*.in) + output (*.out) to XSF with magnetic moments")
+    p_xsfm.add_argument("--scf_in", help="Input QE .in file (e.g. scf.in)")
+    p_xsfm.add_argument("--scf_out", help="Output QE .out file (with 'magn=' lines)")
+    p_xsfm.add_argument("-o", "--output", help="Optional output XSF filename")
+    p_xsfm.add_argument("--axis",
+        nargs=3,
+        type=float,
+        default=(0.0, 0.0, 1.0),
+        metavar=("X", "Y", "Z"),
+        help="Moment direction (for collinear spins; default z-axis)"
+    )
+    p_xsfm.set_defaults(func=lambda args: inout2xsf(
+        args.scf_in or "scf.in",
+        args.scf_out or "scf.out",
+        out=args.output,
+        axis=tuple(args.axis),
+    ))
+
     # --- plot_dos ---
     p_dos = subparsers.add_parser("plot_dos", help="Plot total DOS and optional PDOS")
     p_dos.add_argument("--pdos-tot", help="Path to total DOS file (pdos_tot)")
@@ -27,6 +46,7 @@ def main():
     p_dos.add_argument("--group", help="Comma-separated grouping keys (orb, elem, site)")
     p_dos.add_argument("--save-png", help="Save figure to file (default: <prefix>_dos.png)")
     p_dos.add_argument("--display", action="store_true", help="Show plot interactively instead of saving")
+    p_dos.add_argument("--gap", dest="show_gap", action="store_true", help="Compute and annotate band gap from total DOS")
     p_dos.add_argument("--xlim",
         nargs=2,
         type=float,
@@ -42,6 +62,7 @@ def main():
         group_keys=args.group.split(",") if args.group else None,
         save_png=args.save_png,
         display=args.display,
+        show_gap=args.show_gap,
         xlim=args.xlim
     ))
 
@@ -52,6 +73,7 @@ def main():
     p_band.add_argument("--nscf-out", help="Path to nscf.out (for Fermi energy)")
     p_band.add_argument("--save-png", help="Save figure to file (default: <prefix>_band.png)")
     p_band.add_argument("--display", action="store_true", help="Show plot interactively instead of saving")
+    p_band.add_argument("--gap", dest="show_gap", action="store_true", help="Compute and annotate band gap (↑, ↓, or total)")
     p_band.add_argument("--ylim",
         nargs=2,
         type=float,
@@ -66,6 +88,7 @@ def main():
         save_png=args.save_png,
         display=args.display,
         ylim=args.ylim,
+        show_gap=args.show_gap,
     ))
 
     # --- bulk-modulus ---

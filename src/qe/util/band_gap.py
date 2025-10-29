@@ -21,6 +21,7 @@ class GapResult:
             s += f"\nVBM = {self.vbm:.3f} eV @ k={self.vbm_kidx}, CBM = {self.cbm:.3f} eV @ k={self.cbm_kidx}"
         else:
             s += f"\nVBM = {self.vbm:.3f} eV, CBM = {self.cbm:.3f} eV"
+        s += " (related to efermi)"
         return s
 
 def get_gap_from_dos(
@@ -41,7 +42,7 @@ def get_gap_from_dos(
     efermi : float
         Fermi energy (eV).
     thr : float, optional
-        DOS threshold as a fraction of the maximum DOS, used to
+        DOS threshold, used to
         determine the onset of valence/conduction states.
         Default is 1e-3.
 
@@ -56,8 +57,7 @@ def get_gap_from_dos(
     - Energies are internally shifted so that E_F = 0.
     """
     E = energies - efermi
-    thr_abs = thr * np.max(dos)
-    mask = dos > thr_abs
+    mask = dos > thr
 
     if not np.any(mask):
         return GapResult(gap=0.0, vbm=0.0, cbm=0.0, method="DOS")
@@ -113,7 +113,7 @@ def get_gap_from_bands(
         return GapResult(gap=0.0, vbm=0.0, cbm=0.0, method="band")
 
     # VBM
-    vbm_idx = np.unravel_index(np.argmax(E * val_mask), E.shape)
+    vbm_idx = np.unravel_index(np.argmax(np.where(val_mask, E, -np.inf)), E.shape)
     vbm_val = E[vbm_idx]
 
     # CBM
