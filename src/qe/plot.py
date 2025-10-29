@@ -9,6 +9,7 @@ from .util.find_file import resolve_file
 from .util.pdos import load_and_group_pdos, format_label, read_fermi, load_dos
 from .util.bands import discover_band_inputs, read_kpoints, parse_bands_in, load_band_data, format_kpoints
 from .util.plt_util import get_visible_ylim
+from .util.band_gap import get_gap_from_dos, get_gap_from_bands
 
 def plot_dos(pdos_tot: str | None = None,
     nscf_in: str | None = None, 
@@ -108,6 +109,7 @@ def plot_dos(pdos_tot: str | None = None,
         ax.axhline(0, color = 'k', lw = 1)
         ax.set_ylim(bottom=bottom, top=top)
 
+    # --- save or display ---
     if display:
         plt.show()
     else:
@@ -165,12 +167,12 @@ def plot_band(
     kpoints = read_kpoints(band_in)
 
     # --- read bands ---
-    band_sources = []
+    band_sources: list[np.ndarray, int|None] = [] # typically, len will be 1 or 2 depends on nspin
     for b_in in bands_in:
         filband, spin_comp = parse_bands_in(b_in)
         if not filband:
             raise RuntimeError(f"No filband=... found in {b_in}")
-        gnu_data = load_band_data(filband + ".gnu")
+        gnu_data = load_band_data(filband + ".gnu") # (n_points, n_bands+1), first col is k
         band_sources.append((gnu_data, spin_comp))
     # --- plotting ---
     fig, ax = plt.subplots()

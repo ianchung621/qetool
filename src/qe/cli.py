@@ -78,14 +78,17 @@ def main():
         default=None,
         help="Comma-separated scale factors, e.g. 0.97,0.98,0.99,1,1.01")
     p_bm.add_argument("--display", action="store_true", help="Show plot interactively")
-
+    p_bm.add_argument("-MV", "--magvol", action="store_true",
+    help="Also plot magnetization vs volume (bulk_MV.png)")
     def run_bm(args):
         if args.prepare:
             scales = [float(x) for x in args.prepare.split(",")]
-            prepare_scaled_inputs(Path(args.scf_in), scales)
+            return prepare_scaled_inputs(Path(args.scf_in), scales)
         else:
-            analyze_bulk_modulus(display=args.display)
-
+            return analyze_bulk_modulus(
+                display=args.display,
+                plot_magvol=args.magvol
+            )
     p_bm.set_defaults(func=run_bm)
 
 
