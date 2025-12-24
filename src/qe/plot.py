@@ -184,9 +184,15 @@ def plot_band(
         try:
             nscf_out = resolve_file("nscf.out", "nscf.out", search_sibling_file=True)
             efermi = read_fermi(nscf_out)
-        except:
-            efermi = None
-            print("nscf.out not found. Skipping E_Fermi plotting and showing full band structure.")
+        except FileNotFoundError:
+            try:
+                nscf_out = resolve_file("scf.out", "scf.out", search_sibling_file=True)
+                efermi = read_fermi(nscf_out)
+            except:
+                efermi = None
+                print("nscf.out not found. Skipping E_Fermi plotting and showing full band structure.")
+    else:
+        efermi = read_fermi(nscf_out)
     
     nspin = read_nspin(band_in)
 

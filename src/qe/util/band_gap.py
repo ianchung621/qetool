@@ -74,7 +74,8 @@ def get_gap_from_dos(
 def get_gap_from_bands(
     k_vals: np.ndarray,
     energies: np.ndarray,
-    efermi: float
+    efermi: float,
+    etol: float = 0
 ) -> GapResult:
     """
     Compute the electronic band gap from band-structure eigenvalues.
@@ -106,8 +107,8 @@ def get_gap_from_bands(
     E = energies - efermi
 
     # Mask for valence and conduction states
-    val_mask = E <= 0
-    cond_mask = E >= 0
+    val_mask = E <= - etol
+    cond_mask = E >= etol
 
     if not np.any(val_mask) or not np.any(cond_mask):
         return GapResult(gap=0.0, vbm=0.0, cbm=0.0, method="band")

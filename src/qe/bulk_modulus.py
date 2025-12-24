@@ -280,6 +280,21 @@ def analyze_bulk_modulus(pattern: str = "a*_scf.out", save_png: str = "bulk_EV.p
     plot_EV(Vnorm, E, poly, save_png, display)
     print(f"Saved E–V plot: {save_png}")
 
+    # ============================================================
+    # Save raw E(V) and magnetization data to CSV
+    # ============================================================
+    csv_path = Path(save_png).with_suffix("").with_name("bulk_EV_data.csv")
+
+    import pandas as pd
+    df = pd.DataFrame({
+        "Vnorm": Vnorm,
+        "Energy_Ry": E,
+        "Magnetization_Bohr": M,
+        "Filename": [p.name for p in paths],
+    })
+    df.to_csv(csv_path, index=False)
+    print(f"Saved raw E–V data → {csv_path}")
+
     if plot_magvol:
         # --- Magnetization at equilibrium ---
         M0, slope, intercept = magnetization_at_V0(Vnorm, M, V0)

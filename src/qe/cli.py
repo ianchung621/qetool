@@ -4,6 +4,9 @@ from pathlib import Path
 from .convert import in2xsf, inout2xsf
 from .plot import plot_dos, plot_band
 from .bulk_modulus import prepare_scaled_inputs, analyze_bulk_modulus
+from .opt_cond import plot_conductivity
+from .dielectric import plot_dielectric
+from .kerr_rotation import plot_kerr_rotation
 
 def main():
     parser = argparse.ArgumentParser(
@@ -113,6 +116,66 @@ def main():
                 plot_magvol=args.magvol
             )
     p_bm.set_defaults(func=run_bm)
+
+    # --- plot_opt (optical conductivity) ---
+    p_opt = subparsers.add_parser("plot_opt", help="Plot optical conductivity from postw90 (kubo)")
+    p_opt.add_argument("component", help="Tensor component, e.g. S_xx, S_xy, A_xy")
+    p_opt.add_argument("--prefix", help="Wannier seedname (default: infer from *.win)")
+    p_opt.add_argument(
+        "--unit",
+        choices=["S/cm", "S/m", "s^-1"],
+        default="S/cm",
+        help="Output unit for optical conductivity"
+    )
+    p_opt.add_argument("--jdos", action="store_true", help="Overlay JDOS on secondary axis")
+    p_opt.add_argument("--soc", action="store_true", help="SOC or magnetic calculation (no spin degeneracy factor)")
+    p_opt.add_argument("--save-png", help="Save figure to file (default: <prefix>_opt_cond_<component>.png)")
+    p_opt.add_argument("--display", action="store_true", help="Show plot interactively instead of saving")
+    p_opt.set_defaults(
+        func=lambda args: plot_conductivity(
+            component=args.component,
+            prefix=args.prefix,
+            jdos=args.jdos,
+            out_unit=args.unit,
+            save_png=args.save_png,
+            display=args.display,
+            soc=args.soc,
+        )
+    )
+
+    # --- plot_die (dielectric function) ---
+    p_die = subparsers.add_parser("plot_die", help="Plot dielectric function ε(ω) from optical conductivity")
+    p_die.add_argument("--component", default="S_xx", help="Conductivity component used for ε (default: S_xx)")
+    p_die.add_argument("--prefix", help="Wannier seedname (default: infer from *.win)")
+    p_die.add_argument("--eps-inf", type=float, default=1.0, help="High-frequency dielectric constant ε∞ (default: 1.0)")
+    p_die.add_argument("--soc", action="store_true", help="SOC or magnetic calculation (no spin degeneracy factor)")
+    p_die.add_argument("--save-png", help="Save figure to file (default: <prefix>_dielectric_<component>.png)")
+    p_die.add_argument("--display", action="store_true", help="Show plot interactively instead of saving")
+    p_die.set_defaults(
+        func=lambda args: plot_dielectric(
+            component=args.component,
+            prefix=args.prefix,
+            eps_inf=args.eps_inf,
+            save_png=args.save_png,
+            display=args.display,
+            soc=args.soc,
+        )
+    )
+
+    # --- plot_kerr ---
+    p_kerr = subparsers.add_parser("plot_kerr", help="Plot Kerr rotation and ellipticity from Kubo conductivity")
+    p_kerr.add_argument("--prefix", help="File prefix for Kubo output (expects {prefix}-kubo_S_xx.dat and -kubo_A_xy.dat)")
+    p_kerr.add_argument("--unit", choices=["deg", "rad"], default="deg", help="Angle unit (default: deg)")
+    p_kerr.add_argument("--save-png", help="Save figure to file (default: <prefix>_kerr.png)")
+    p_kerr.add_argument("--display", action="store_true", help="Show plot interactively instead of saving")
+    p_kerr.set_defaults(
+        func=lambda args: plot_kerr_rotation(
+            prefix=args.prefix,
+            unit=args.unit,
+            save_png=args.save_png,
+            display=args.display,
+        )
+    )
 
 
     # --- parse + dispatch ---

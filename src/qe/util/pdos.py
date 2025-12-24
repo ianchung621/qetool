@@ -7,9 +7,32 @@ import numpy as np
 
 def read_fermi(nscf_out: str) -> float | None:
     with open(nscf_out) as f:
-        for line in f:
-            if "the fermi energy is" in line.lower():
-                return float(line.split()[-2])  # "is XXX ev"
+        text = f.read().lower()
+
+    # --- Case 1: standard Fermi energy line ---
+    m = re.search(r"the fermi energy is\s+([0-9.+-e]+)", text)
+    if m:
+        return float(m.group(1))
+    
+
+    # --- Case 2: highest occupied / lowest unoccupied line ---
+    m = re.search(
+        r"highest occupied,\s*lowest unoccupied level\s*\(ev\)\s*:\s*([0-9.+-e]+)\s+([0-9.+-e]+)",
+        text
+    )
+    if m:
+        e_vbm, e_cbm = map(float, m.groups())
+        return (e_vbm + e_cbm)/2
+    
+    # --- Case 3: only highest occupied level ---
+    m = re.search(
+        r"highest occupied level\s*\(ev\)\s*:\s*([0-9.+-e]+)",
+        text,
+    )
+    if m:
+        e_vbm = float(m.group(1))
+        return e_vbm
+
     warnings.warn(f"Fermi energy not found in {nscf_out}")
     return None
 
