@@ -5,6 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "qetool"
 version = "0.1.0"
+license = "MIT"
 dependencies = ["numpy", "matplotlib"]
 
 [project.optional-dependencies]
