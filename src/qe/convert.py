@@ -3,7 +3,18 @@ import re
 
 import numpy as np
 from .util.read_qe import read_prefix
-from ase.io import read, write
+
+
+def _require_ase_io():
+    try:
+        from ase.io import read, write
+    except ImportError as exc:
+        raise ImportError(
+            "The XSF conversion commands require ASE. Install it with "
+            "`pip install 'qe[ase]'`, `pip install '.[ase]'` from this repo, "
+            "or `pip install ase`."
+        ) from exc
+    return read, write
 
 def in2xsf(fn: str, out: str | None = None) -> str:
     """
@@ -16,6 +27,7 @@ def in2xsf(fn: str, out: str | None = None) -> str:
     out : str | None, default=None
         Output filename. If None, automatically derived from input.
     """
+    read, write = _require_ase_io()
     atoms = read(fn, format="espresso-in")
     in_path = Path(fn)
 
@@ -116,6 +128,7 @@ def inout2xsf(scf_in: str, scf_out: str, out: str | None = None,
     out : str | None
     axis : tuple[float,float,float]
     """
+    read, _ = _require_ase_io()
     out_path = Path(out) if out else Path(read_prefix(scf_in) + ".xsf")
     in_path = Path(scf_in)
 

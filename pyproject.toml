@@ -5,7 +5,10 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "qe"
 version = "0.1.0"
-dependencies = ["numpy", "pandas", "matplotlib", "ase"]
+dependencies = ["numpy", "pandas", "matplotlib"]
+
+[project.optional-dependencies]
+ase = ["ase"]
 
 [project.scripts]
 qe = "qe.cli:main"
