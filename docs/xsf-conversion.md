@@ -5,6 +5,12 @@ The XSF commands convert QE inputs to XCrySDen-compatible `.xsf` files. They req
 Install with ASE support:
 
 ```bash
+pip install 'qetool[ase] @ git+https://github.com/ianchung621/qetool.git'
+```
+
+From a local clone:
+
+```bash
 pip install -e '.[ase]'
 ```
 

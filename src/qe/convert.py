@@ -11,8 +11,8 @@ def _require_ase_io():
     except ImportError as exc:
         raise ImportError(
             "The XSF conversion commands require ASE. Install it with "
-            "`pip install 'qetool[ase]'`, `pip install '.[ase]'` from this repo, "
-            "or `pip install ase`."
+            "`pip install 'qetool[ase] @ git+https://github.com/ianchung621/qetool.git'`, "
+            "`pip install '.[ase]'` from this repo, or `pip install ase`."
         ) from exc
     return read, write
 

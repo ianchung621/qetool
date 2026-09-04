@@ -17,7 +17,17 @@ Use this skill to generate plots or XSF files from existing Quantum ESPRESSO/Wan
 
 2. If unavailable, inspect the environment before installing. Prefer an existing module, venv, conda env, or user-local install path on HPC.
 
-3. For normal plotting, qetool needs `numpy` and `matplotlib`. XSF conversion additionally needs ASE; install qetool with its ASE extra only when using `in2xsf` or `inout2xsf`.
+3. Install qetool if needed:
+
+   ```bash
+   pip install git+https://github.com/ianchung621/qetool.git
+   ```
+
+4. For normal plotting, qetool needs `numpy` and `matplotlib`. XSF conversion additionally needs ASE; install qetool with its ASE extra only when using `in2xsf` or `inout2xsf`.
+
+   ```bash
+   pip install 'qetool[ase] @ git+https://github.com/ianchung621/qetool.git'
+   ```
 
 ## General Workflow
 

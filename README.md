@@ -4,6 +4,14 @@ Small command-line helpers for plotting and converting Quantum ESPRESSO and Wann
 
 ## Install
 
+From GitHub:
+
+```bash
+pip install git+https://github.com/ianchung621/qetool.git
+```
+
+For development from a local clone:
+
 ```bash
 pip install -e .
 ```
@@ -11,8 +19,26 @@ pip install -e .
 XSF conversion uses ASE, which is optional:
 
 ```bash
+pip install 'qetool[ase] @ git+https://github.com/ianchung621/qetool.git'
+```
+
+From a local clone, use:
+
+```bash
 pip install -e '.[ase]'
 ```
+
+After installation, the command is `qe`.
+
+## Agent Skill
+
+To help future agents use qetool inside another QE calculation repo, copy [SKILL.md](SKILL.md) to:
+
+```text
+.agents/qe-plotting/SKILL.md
+```
+
+The target environment still needs qetool installed and available on `PATH`.
 
 ## Basic Usage
 
