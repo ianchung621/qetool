@@ -66,6 +66,7 @@ def plot_kerr_rotation(
     unit: Literal["deg", "rad"] = "deg",
     save_png: str | None = None,
     display: bool = False,
+    flip_sign: bool = True
 ) -> None:
     """
     Read Kubo outputs and plot Kerr rotation/ellipticity.
@@ -93,6 +94,8 @@ def plot_kerr_rotation(
     out = _compute_kerr(energy_xx, s_xx, s_xy)
 
     scale = 1.0 if unit == "rad" else (180.0 / np.pi)
+    if flip_sign:
+        scale = -scale
     rotation = out.rotation * scale
     ellipticity = out.ellipticity * scale
 
