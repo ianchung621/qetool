@@ -1,4 +1,5 @@
 import re
+import csv
 from pathlib import Path
 import numpy as np
 import matplotlib.pyplot as plt
@@ -285,14 +286,13 @@ def analyze_bulk_modulus(pattern: str = "a*_scf.out", save_png: str = "bulk_EV.p
     # ============================================================
     csv_path = Path(save_png).with_suffix("").with_name("bulk_EV_data.csv")
 
-    import pandas as pd
-    df = pd.DataFrame({
-        "Vnorm": Vnorm,
-        "Energy_Ry": E,
-        "Magnetization_Bohr": M,
-        "Filename": [p.name for p in paths],
-    })
-    df.to_csv(csv_path, index=False)
+    with csv_path.open("w", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        writer.writerow(["Vnorm", "Energy_Ry", "Magnetization_Bohr", "Filename"])
+        writer.writerows(
+            [vnorm, energy, magnetization, path.name]
+            for vnorm, energy, magnetization, path in zip(Vnorm, E, M, paths)
+        )
     print(f"Saved raw E–V data → {csv_path}")
 
     if plot_magvol:
